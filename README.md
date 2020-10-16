@@ -1,7 +1,7 @@
-# Polyreg
+# Polyfit
 Constrained one dimensional polynomial regression in Python
 
-Mostly developed for educational purposes, polyreg enables fitting scikit learn compatible one dimensional polynomial regression models under shape constraints.
+Mostly developed for educational purposes, polyfit enables fitting scikit learn compatible one dimensional polynomial regression models under shape constraints.
 Under the hood polynomial coefficients are optimized via cvxpy's excellent convex optimizers.
 
 In particular, the polyreg estimator provides:

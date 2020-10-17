@@ -17,7 +17,7 @@ The constraints however are only met in the interval of the training data.
 Installation: 
 
 ```bash
-git clone https://github.com/dschmitz89/Polyreg/
+git clone https://github.com/dschmitz89/Polyfit/
 cd Polyreg
 pip install .
 ```

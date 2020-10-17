@@ -42,6 +42,7 @@ class PolynomRegressor(BaseEstimator):
     
     def vander(self, x):
         
+        x = x.astype(np.float64)
         return np.fliplr(np.vander(x, N = self.deg +1))
 
     def vander_grad(self, x):
@@ -81,17 +82,13 @@ class PolynomRegressor(BaseEstimator):
     def fit(self, x, y, loss = 'l2', m = 1, yrange = None, verbose = False):
         
         vander = self.vander(x)
-        
         column_norms_vander = self.column_norms(vander)
-        
         vander = vander/column_norms_vander
         
         vander_grad = self.vander_grad(x)
-
         vander_grad =vander_grad/column_norms_vander
         
         vander_hesse = self.vander_hesse(x)
-    
         vander_hesse = vander_hesse/column_norms_vander
         
         #set up variable for coefficients to be estimated
@@ -168,14 +165,14 @@ class PolynomRegressor(BaseEstimator):
             if loss == 'l1':
                 
             #l1 loss solved by ECOS. Lower its tolerances for convergence    
-                problem.solve(abstol=1e-10, reltol=1e-10, max_iters=1000, \
+                problem.solve(abstol=1e-10, reltol=1e-10, max_iters=10000, \
                               feastol=1e-12, verbose = verbose)            
                 
             else:
             
                 #l2 and huber losses solved by OSQP. Lower its tolerances for convergence
-                problem.solve(eps_abs=1e-10, eps_rel=1e-10, max_iter=1000000, \
-                              eps_prim_inf = 1e-8, eps_dual_inf = 1e-8, verbose = verbose) 
+                problem.solve(eps_abs=1e-10, eps_rel=1e-10, max_iter=10000000, \
+                              eps_prim_inf = 1e-10, eps_dual_inf = 1e-10, verbose = verbose) 
         
         #in case OSQP or ECOS fail, use SCS
         except cv.solve.SolverError:
@@ -184,7 +181,7 @@ class PolynomRegressor(BaseEstimator):
             
                 problem.solve(solver=cv.SCS, max_iters=10000, eps=1e-8, verbose = verbose)
             
-            except cv.solve.SolverError:
+            except cv.SolverError:
                     
                 print("cvxpy optimization failed!")
         

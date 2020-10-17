@@ -22,7 +22,7 @@ cd Polyreg
 pip install .
 ```
 
-Example usage can be found in the test.py file under /polyreg. It produces the following image. 
+Example usage can be found in the test.py file under /polyfit. It produces the following image. 
 
 While unconstrained polynomial fitting results in a decreasing function for high x values, the constraints result in a visually more  convincing fit.
 

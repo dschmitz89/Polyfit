@@ -20,5 +20,7 @@ if __name__ == '__main__':
             'numpy',
             'cvxpy',
             'scikit-learn'
-        ]             
+        ],
+        include_package_data=True,
+        package_data={'': ['Example_Data.npz']}             
     )

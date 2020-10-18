@@ -18,7 +18,7 @@ Installation:
 
 ```bash
 git clone https://github.com/dschmitz89/Polyfit/
-cd Polyreg
+cd Polyfit
 pip install .
 ```
 

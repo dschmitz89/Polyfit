@@ -23,7 +23,8 @@ def load_example():
 class PolynomRegressor(BaseEstimator):
     
     def __init__(self, deg=None, monotonocity = None, curvature = None, \
-                 positive_coeffs = False, negative_coeffs = False):
+                 positive_coeffs = False, negative_coeffs = False, \
+                     regularization = None, lam = 0):
         
         self.deg = deg
         self.monotonocity = monotonocity
@@ -31,6 +32,8 @@ class PolynomRegressor(BaseEstimator):
         self.coeffs_ = None
         self.positive_coeffs = positive_coeffs
         self.negative_coeffs = negative_coeffs
+        self.regularization = regularization
+        self.lam = lam
     
     def column_norms(self, V):
         
@@ -75,9 +78,15 @@ class PolynomRegressor(BaseEstimator):
         
     def predict(self, x):
         
-        vander = self.vander(x)
+        if self.coeffs_ is not None:
+            
+            vander = self.vander(x)
     
-        return np.dot(vander, self.coeffs_)
+            return np.dot(vander, self.coeffs_)
+        
+        else:
+            
+            return np.nan
     
     def fit(self, x, y, loss = 'l2', m = 1, yrange = None, verbose = False):
         
@@ -111,17 +120,31 @@ class PolynomRegressor(BaseEstimator):
         
         #define loss function
         
+        if self.regularization == 'l1':
+            
+            regularization_term = cv.norm1(coeffs)
+            
+        elif self.regularization == 'l2':
+            
+            regularization_term = cv.pnorm(coeffs, 2, axis = 0)**2
+        
+        else:
+            
+            regularization_term = 0
+            
         if loss == 'l2':
             
-            objective = cv.Minimize(cv.sum_squares(residuals))
+            data_term = cv.sum_squares(residuals)
                                     
         elif loss == 'l1':
             
-            objective = cv.Minimize(cv.norm1(residuals))
+            data_term = cv.norm1(residuals)
         
         elif loss == 'huber':
             
-            objective = cv.Minimize(cv.sum(cv.huber(residuals, m)))
+            data_term = cv.sum(cv.huber(residuals, m))
+        
+        objective = cv.Minimize(data_term + self.lam * regularization_term)
         
         #build constraints
         
@@ -162,32 +185,56 @@ class PolynomRegressor(BaseEstimator):
         
         try:
             
-            if loss == 'l1':
-                
+            if loss == 'l1' or self.regularization != 'l1':
             #l1 loss solved by ECOS. Lower its tolerances for convergence    
-                problem.solve(abstol=1e-10, reltol=1e-10, max_iters=10000, \
-                              feastol=1e-12, verbose = verbose)            
+                problem.solve(abstol=1e-9, reltol=1e-9, max_iters=1000000, \
+                              feastol=1e-9, abstol_inacc = 1e-7, \
+                                  reltol_inacc=1e-7, verbose = verbose)            
                 
             else:
-            
+                    
                 #l2 and huber losses solved by OSQP. Lower its tolerances for convergence
                 problem.solve(eps_abs=1e-10, eps_rel=1e-10, max_iter=10000000, \
                               eps_prim_inf = 1e-10, eps_dual_inf = 1e-10, verbose = verbose) 
-        
+                    
         #in case OSQP or ECOS fail, use SCS
-        except cv.solve.SolverError:
+        except cv.SolverError:
             
             try:
             
-                problem.solve(solver=cv.SCS, max_iters=10000, eps=1e-8, verbose = verbose)
+                problem.solve(solver=cv.SCS, max_iters=100000, eps=1e-4, verbose = verbose)
             
             except cv.SolverError:
                     
                 print("cvxpy optimization failed!")
         
+        #if optimal solution found, set parameters
+        
         if problem.status == 'optimal':
+            
             coefficients = coeffs.value/column_norms_vander
 
             self.coeffs_ = coefficients
+        
+        #if not try SCS optimization
+        else:
             
+            try:
+                
+                problem.solve(solver=cv.SCS, max_iters=100000, eps=1e-6, verbose = verbose)
+            
+            except cv.SolverError:
+                
+                pass
+        
+        if problem.status == 'optimal':
+            
+            coefficients = coeffs.value/column_norms_vander
+
+            self.coeffs_ = coefficients
+        
+        else:
+            
+            print("CVXPY optimization failed")
+
         return self

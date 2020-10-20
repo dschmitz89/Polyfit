@@ -1,5 +1,5 @@
 # Polyfit
-Constrained one dimensional polynomial regression in Python
+Scikit learn compatible constrained one dimensional polynomial regression in Python. Multivariate extension upcoming!
 
 Mostly developed for educational purposes, polyfit enables fitting scikit learn compatible one dimensional polynomial regression models under shape constraints.
 Under the hood polynomial coefficients are optimized via cvxpy's excellent convex optimizers. 
@@ -13,7 +13,7 @@ In particular, the PolynomRegressor estimator provides:
 * Fitting only positive or negative coefficients
 * possibility for cross validation over the degree of the polynomial via sklearn's model selection utilities
 
-The constraints however are only met in the interval of the training data.
+The constraints however are currently only met in the interval of the training data.
 
 Installation: 
 

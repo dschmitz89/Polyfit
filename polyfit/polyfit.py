@@ -88,17 +88,18 @@ class PolynomRegressor(BaseEstimator):
             
             return np.nan
     
-    def fit(self, x, y, loss = 'l2', m = 1, yrange = None, verbose = False):
+    def fit(self, x, y, loss = 'l2', m = 1, yrange = None, \
+            constraint_range = None, gridpoints = 50, fixed_point = None, verbose = False):
         
         vander = self.vander(x)
         column_norms_vander = self.column_norms(vander)
         vander = vander/column_norms_vander
         
-        vander_grad = self.vander_grad(x)
-        vander_grad =vander_grad/column_norms_vander
+        #vander_grad = self.vander_grad(x)
+        #vander_grad =vander_grad/column_norms_vander
         
-        vander_hesse = self.vander_hesse(x)
-        vander_hesse = vander_hesse/column_norms_vander
+        #vander_hesse = self.vander_hesse(x)
+        #vander_hesse = vander_hesse/column_norms_vander
         
         #set up variable for coefficients to be estimated
         
@@ -150,6 +151,21 @@ class PolynomRegressor(BaseEstimator):
         
         constraints = []
         
+        if constraint_range is None:
+            
+            constraint_range = [np.amin(x), np.amax(x)]
+            
+        x_grid = np.linspace(constraint_range[0], constraint_range[1], num=gridpoints)
+        
+        vander_constraint = self.vander(x_grid)
+        vander_constraint = vander_constraint/column_norms_vander
+        
+        vander_grad = self.vander_grad(x_grid)
+        vander_grad =vander_grad/column_norms_vander
+        
+        vander_hesse = self.vander_hesse(x_grid)
+        vander_hesse = vander_hesse/column_norms_vander
+        
         if self.monotonocity == 'positive':
 
             constraints.append(vander_grad@coeffs >= 0)
@@ -178,14 +194,23 @@ class PolynomRegressor(BaseEstimator):
         
         if yrange is not None:
             
-            constraints.append(vander @ coeffs <= yrange[1])
-            constraints.append(vander @ coeffs >= yrange[0])
+            constraints.append(vander_constraint @ coeffs <= yrange[1])
+            constraints.append(vander_constraint @ coeffs >= yrange[0])
+        
+        if fixed_point is not None:
+            
+            vander_fix = self.vander(np.array([fixed_point[0]]))
+            vander_fix = vander_fix/column_norms_vander
+            
+            constraints.append(vander_fix @ coeffs == fixed_point[1])
             
         problem = cv.Problem(objective, constraints = constraints)
         
-        try:
+
             
-            if loss == 'l1' or self.regularization != 'l1':
+        try:    
+            
+            if loss == 'l1':
             #l1 loss solved by ECOS. Lower its tolerances for convergence    
                 problem.solve(abstol=1e-9, reltol=1e-9, max_iters=1000000, \
                               feastol=1e-9, abstol_inacc = 1e-7, \

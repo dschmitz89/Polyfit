@@ -80,21 +80,41 @@ class PolynomRegressor(BaseEstimator):
         
         if self.coeffs_ is not None:
             
-            vander = self.vander(x)
-    
-            return np.dot(vander, self.coeffs_)
+            designmatrix = self.build_designmatrix(x)
+            #print("designmatrix: ", designmatrix.shape)
+            return np.dot(designmatrix, self.coeffs_)
         
         else:
             
             return np.nan
     
+    def build_designmatrix(self, x):
+
+        n_samples, n_features = x.shape
+
+        designmatrix = self.vander(x[:, 0])
+
+        #loop over features and append Vandermonde matrix for each features without constant column
+        for i in range(1, n_features):
+
+            van = self.vander(x[:, i])
+            #print("van shape: ", van.shape)
+
+            designmatrix = np.hstack((designmatrix, van[:, 1:]))
+
+        return designmatrix
+
     def fit(self, x, y, loss = 'l2', m = 1, yrange = None, \
             constraint_range = None, gridpoints = 50, fixed_point = None, verbose = False):
         
-        vander = self.vander(x)
-        column_norms_vander = self.column_norms(vander)
-        vander = vander/column_norms_vander
+        n_samples, n_features = x.shape
+        n_coeffs = n_features * self.deg +1
+        print("number of coefficients: ", n_coeffs)
+        designmatrix = self.build_designmatrix(x)
+        column_norms_designmatrix = self.column_norms(designmatrix)
+        designmatrix = designmatrix/column_norms_designmatrix
         
+        print("design: ", designmatrix.shape)
         #vander_grad = self.vander_grad(x)
         #vander_grad =vander_grad/column_norms_vander
         
@@ -105,19 +125,19 @@ class PolynomRegressor(BaseEstimator):
         
         if self.positive_coeffs:
             
-            coeffs = cv.Variable(self.deg +1, pos = True)
+            coeffs = cv.Variable(n_coeffs, pos = True)
         
         elif self.negative_coeffs:
             
-            coeffs = cv.Variable(self.deg +1, neg = True)
+            coeffs = cv.Variable(n_coeffs, neg = True)
             
         else:
             
-            coeffs = cv.Variable(self.deg +1)
+            coeffs = cv.Variable(n_coeffs)
         
         #calculate residuals
         
-        residuals = vander @ coeffs -y
+        residuals = designmatrix @ coeffs -y
         
         #define loss function
         
@@ -147,6 +167,7 @@ class PolynomRegressor(BaseEstimator):
         
         objective = cv.Minimize(data_term + self.lam * regularization_term)
         
+        '''
         #build constraints
         
         constraints = []
@@ -203,8 +224,8 @@ class PolynomRegressor(BaseEstimator):
             vander_fix = vander_fix/column_norms_vander
             
             constraints.append(vander_fix @ coeffs == fixed_point[1])
-            
-        problem = cv.Problem(objective, constraints = constraints)
+        '''    
+        problem = cv.Problem(objective)#, constraints = constraints)
         
 
             
@@ -237,7 +258,7 @@ class PolynomRegressor(BaseEstimator):
         
         if problem.status == 'optimal':
             
-            coefficients = coeffs.value/column_norms_vander
+            coefficients = coeffs.value/column_norms_designmatrix
 
             self.coeffs_ = coefficients
         
@@ -254,7 +275,7 @@ class PolynomRegressor(BaseEstimator):
         
         if problem.status == 'optimal':
             
-            coefficients = coeffs.value/column_norms_vander
+            coefficients = coeffs.value/column_norms_designmatrix
 
             self.coeffs_ = coefficients
         
@@ -263,3 +284,45 @@ class PolynomRegressor(BaseEstimator):
             print("CVXPY optimization failed")
 
         return self
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+coeffs = np.array([1,2,3, -1, 1])
+
+x_points = np.linspace(-2,2, num = 15)
+y_points = np.linspace(-5,5, num = 15)
+X_sparse = np.column_stack((x_points, y_points))
+#print("X shape: ", X_sparse.shape)
+poly = PolynomRegressor(deg = 2)
+#D = poly.build_designmatrix(X_sparse)
+#print(D.shape)
+
+poly.coeffs_ = coeffs
+
+z_true = poly.predict(X_sparse)
+z_noisy = np.random.normal(z_true, 1)
+#print(z_true)
+print("data: ", z_noisy)
+
+poly_new = PolynomRegressor(deg = 2)
+poly_new.fit(X_sparse, z_noisy, loss='l1')
+pred = poly_new.predict(X_sparse)
+print("pred: ", pred)
+est_coeffs = poly_new.coeffs_
+print("est. coeeffs: ", est_coeffs)
+
+
+XX, YY = np.meshgrid(x_points, y_points)
+
+ZZ = np.full_like(XX, est_coeffs[0]) + XX * est_coeffs[1] + XX * XX * est_coeffs[2] + YY * est_coeffs[3] + YY * YY * est_coeffs[4]
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+
+surf = ax.plot_surface(XX, YY, ZZ, \
+                       linewidth=0, antialiased=False)#, cmap=cm.coolwarm
+
+ax.scatter(x_points, x_points, z_noisy, c = 'b', marker='o', zorder = 0)
+
+plt.show()

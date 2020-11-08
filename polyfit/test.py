@@ -13,8 +13,8 @@ DEG = 3
 VERBOSE = False
 datarange=[0, 1]
 
-np_coeffs = np.polyfit(X, y, 2)
-polyestimator = PolynomRegressor(deg=2)
+np_coeffs = np.polyfit(X, y, DEG)
+polyestimator = PolynomRegressor(deg=DEG)
 vander = polyestimator.vander(x_plot)
 pred_numpy = vander@np_coeffs[::-1]
 
@@ -41,13 +41,13 @@ pred_mon=polyestimator.predict(x_plot)
 f, ax = plt.subplots(1, figsize = (9, 5))
 ax.set_xlim(-0.01, 85)
 ax.set_ylim(0.2, 1.03)
-
+ax.set_title("Unconstrained polynom versus constrained polynom")
 ax.scatter(X, y, c='k', s=8)
 
-ax.plot(x_plot, pred_numpy, c='g', label='Deg: 3 /Numpy Polyfit')
-ax.plot(x_plot, pred_unconstrained, c='k', label='Crossvalidated Unconstrained L1 Loss')
-ax.plot(x_plot, pred_mon, c='r', label='Deg: 3 /Monotonic/Bounded Huber Loss')
-ax.plot(x_plot, pred_concave, c='b', label='Deg: 3 /Concave/Bounded Huber Loss')
+ax.plot(x_plot, pred_numpy, c='b', label='Degree=3 Unconstrained')
+#ax.plot(x_plot, pred_unconstrained, c='k', label='Crossvalidated Unconstrained L1 Loss')
+ax.plot(x_plot, pred_mon, c='r', label='Degree=3 Monotonic and Bounded')
+#ax.plot(x_plot, pred_concave, c='b', label='Deg: 3 /Concave/Bounded Huber Loss')
 
 
 axins = zoomed_inset_axes(ax, 2, loc='lower right', borderpad=1.5)
@@ -59,13 +59,13 @@ axins.xaxis.set_visible(False)
 mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0")
 
 axins.scatter(X, y, c='k', s=8)
-axins.plot(x_plot, pred_numpy, c='g')
-axins.plot(x_plot, pred_unconstrained, c='k')
+axins.plot(x_plot, pred_numpy, c='b')
+#axins.plot(x_plot, pred_unconstrained, c='k')
 axins.plot(x_plot, pred_mon, c='r')
-axins.plot(x_plot, pred_concave, c='b')
+#axins.plot(x_plot, pred_concave, c='b')
 
 ax.legend(loc='upper left', frameon=False)
-plt.subplots_adjust(top=0.99,
+plt.subplots_adjust(top=0.92,
 bottom=0.06,
 left=0.05,
 right=0.99)

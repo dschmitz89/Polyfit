@@ -176,12 +176,13 @@ class PolynomRegressor(BaseEstimator):
 
                 elif Feature_constraints.sign == 'negative':
 
-                        constraint_list.append(feature_coefficients <= 0)
+                    constraint_list.append(feature_coefficients <= 0)
 
                 monotonic = Feature_constraints.monotonicity is not None
                 strict_curvature = Feature_constraints.curvature is not None
+                ybound = yrange is not None
 
-                if monotonic or strict_curvature:
+                if monotonic or strict_curvature or ybound:
 
                     if Feature_constraints.constraint_range is None:
 
@@ -223,6 +224,13 @@ class PolynomRegressor(BaseEstimator):
 
                         constraint_list.append(vander_hesse @ feature_coefficients <= 0)                   
 
+        if ybound:
+
+            vander_constraints = self.vander(constraints_grid)
+            vander_constraints = vander_constraints/column_norms_designmatrix
+
+            constraint_list.append(vander_constraints @ coeffs >= yrange[0])
+            constraint_list.append(vander_constraints @ coeffs <= yrange[1])     
         '''
         if yrange is not None:
             
@@ -296,6 +304,7 @@ class PolynomRegressor(BaseEstimator):
 
         return self
 
+'''
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -340,3 +349,4 @@ surf = ax.plot_surface(XX, YY, ZZ, \
 ax.scatter(x_points, x_points, z_noisy, c = 'b', marker='o', zorder = 0)
 
 plt.show()
+'''

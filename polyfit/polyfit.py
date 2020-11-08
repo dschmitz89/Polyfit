@@ -158,6 +158,8 @@ class PolynomRegressor(BaseEstimator):
         
         constraint_list = []
 
+        ybound = yrange is not None
+        
         if constraints is not None:
 
             #loop over all features
@@ -180,7 +182,7 @@ class PolynomRegressor(BaseEstimator):
 
                 monotonic = Feature_constraints.monotonicity is not None
                 strict_curvature = Feature_constraints.curvature is not None
-                ybound = yrange is not None
+                
 
                 if monotonic or strict_curvature or ybound:
 

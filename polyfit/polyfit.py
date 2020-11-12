@@ -8,6 +8,7 @@ Created on Fri Oct  9 12:25:16 2020
 import numpy as np
 import cvxpy as cv
 from sklearn.base import BaseEstimator
+from sklearn.preprocessing import PolynomialFeatures
 from os.path import dirname
 
 PATH = dirname(__file__)
@@ -86,11 +87,11 @@ class PolynomRegressor(BaseEstimator):
         
         return hesse_matrix
         
-    def predict(self, x):
+    def predict(self, x, interactions = False):
         
         if self.coeffs_ is not None:
             
-            designmatrix = self.build_designmatrix(x)
+            designmatrix = self.build_designmatrix(x, interactions = interactions)
             #print("designmatrix: ", designmatrix.shape)
             return np.dot(designmatrix, self.coeffs_)
         
@@ -98,7 +99,7 @@ class PolynomRegressor(BaseEstimator):
             
             return np.nan
     
-    def build_designmatrix(self, x):
+    def build_designmatrix(self, x, interactions = False):
 
         n_samples, n_features = x.shape
 
@@ -112,15 +113,26 @@ class PolynomRegressor(BaseEstimator):
 
             designmatrix = np.hstack((designmatrix, van[:, 1:]))
 
+        if interactions == True:
+
+            poly = PolynomialFeatures(self.deg, interaction_only=True)
+            interactions_matrix = poly.fit_transform(x)
+            #print("interaction matrix: ", interactions_matrix.shape)
+            interactions_matrix = interactions_matrix[:, 1 + n_features: ]
+            #print("interaction matrix afetr cut: ", interactions_matrix.shape)
+            designmatrix = np.hstack((designmatrix, interactions_matrix))
+
         return designmatrix
 
-    def fit(self, x, y, loss = 'l2', m = 1, yrange = None, constraints = None, \
-            constraint_range = None, gridpoints = 50, fixed_point = None, verbose = False):
+    def fit(self, x, y, loss = 'l2',  interactions = False, m = 1, yrange = None, constraints = None, \
+            verbose = False):
         
         n_samples, n_features = x.shape
         n_coeffs = n_features * self.deg +1
         #print("number of coefficients: ", n_coeffs)
-        designmatrix = self.build_designmatrix(x)
+        designmatrix = self.build_designmatrix(x, interactions = interactions)
+        n_coeffs = designmatrix.shape[1]
+        print("design shape: ", designmatrix.shape)
         column_norms_designmatrix = self.column_norms(designmatrix)
         designmatrix = designmatrix/column_norms_designmatrix
 
@@ -198,10 +210,7 @@ class PolynomRegressor(BaseEstimator):
                 if monotonic:
 
                     vander_grad = self.vander_grad(constraints_grid)[:, 1:]
-                    #print("grad shape: ", vander_grad.shape)
-                    #norms = np.ones((self.deg +1, ), dtype=np.float64)
                     norms = column_norms_designmatrix[coefficient_index:coefficient_index + self.deg]
-                    #print("norms: ", norms.shape)
                     vander_grad = vander_grad/norms
 
                     if Feature_constraints.monotonicity == 'inc':
@@ -226,6 +235,7 @@ class PolynomRegressor(BaseEstimator):
 
                         constraint_list.append(vander_hesse @ feature_coefficients <= 0)                   
 
+        '''
         if ybound:
 
             vander_constraints = self.vander(constraints_grid)
@@ -233,7 +243,7 @@ class PolynomRegressor(BaseEstimator):
 
             constraint_list.append(vander_constraints @ coeffs >= yrange[0])
             constraint_list.append(vander_constraints @ coeffs <= yrange[1])     
-        '''
+        
         if yrange is not None:
             
             constraints.append(vander_constraint @ coeffs <= yrange[1])
@@ -306,14 +316,14 @@ class PolynomRegressor(BaseEstimator):
 
         return self
 
-'''
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 coeffs = np.array([1,-5,1, 1, 1])
 
-x_points = np.linspace(0,4, num = 15)
-y_points = np.linspace(0,5, num = 15)
+N = 1000
+x_points = np.linspace(0,4, num = N)
+y_points = np.linspace(0,5, num = N)
 X_sparse = np.column_stack((x_points, y_points))
 #print("X shape: ", X_sparse.shape)
 poly = PolynomRegressor(deg = 2)
@@ -325,13 +335,19 @@ poly.coeffs_ = coeffs
 z_true = poly.predict(X_sparse)
 z_noisy = np.random.normal(z_true, 1)
 #print(z_true)
-print("data: ", z_noisy)
+#print("data: ", z_noisy)
 
-poly_new = PolynomRegressor(deg = 3, regularization='l1', lam = 1e-1)
+poly_new = PolynomRegressor(deg = 2)#, regularization='l1', lam = 1e-1)
 cons = {0: Constraints(sign='positive'), 1: Constraints(monotonicity='inc')}#, curvature='concave'
-poly_new.fit(X_sparse, z_noisy, loss='l2')#, constraints=cons)
-pred = poly_new.predict(X_sparse)
-print("pred: ", pred)
+poly_new.fit(X_sparse, z_noisy, loss='l2', interactions = True)#, constraints=cons)
+pred = poly_new.predict(X_sparse, interactions = True)
+D = poly_new.build_designmatrix(X_sparse, interactions = True)
+#print("X: ", X_sparse)
+#poly = PolynomialFeatures(2, interaction_only = True)
+#print("polyfeatures: ", poly.fit_transform(X_sparse))
+#print("D: ", D)
+#print("D shape: ", D.shape)
+#print("pred: ", pred)
 est_coeffs = poly_new.coeffs_
 print("est. coeeffs: ", est_coeffs)
 
@@ -339,8 +355,8 @@ print("est. coeeffs: ", est_coeffs)
 XX, YY = np.meshgrid(x_points, y_points)
 
 ZZ = np.full_like(XX, est_coeffs[0]) + XX * est_coeffs[1] + XX * XX * est_coeffs[2] +\
-    XX * XX ** XX *est_coeffs[3]  + YY * est_coeffs[4] + YY * YY * est_coeffs[5] +\
-    YY * YY * YY * est_coeffs[6]
+    YY * est_coeffs[3] + YY * YY * est_coeffs[4] + XX * YY * est_coeffs[5]
+    
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -351,4 +367,3 @@ surf = ax.plot_surface(XX, YY, ZZ, \
 ax.scatter(x_points, x_points, z_noisy, c = 'b', marker='o', zorder = 0)
 
 plt.show()
-'''

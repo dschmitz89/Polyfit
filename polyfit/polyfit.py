@@ -31,18 +31,13 @@ class Constraints:
         self.sign = sign
         self.constraint_range = constraint_range
         self.gridpoints = gridpoints
+
 class PolynomRegressor(BaseEstimator):
     
-    def __init__(self, deg=None, monotonocity = None, curvature = None, \
-                 positive_coeffs = False, negative_coeffs = False, \
-                     regularization = None, lam = 0):
+    def __init__(self, deg=None, regularization = None, lam = 0):
         
         self.deg = deg
-        self.monotonocity = monotonocity
-        self.curvature = curvature
         self.coeffs_ = None
-        self.positive_coeffs = positive_coeffs
-        self.negative_coeffs = negative_coeffs
         self.regularization = regularization
         self.lam = lam
     
@@ -132,7 +127,6 @@ class PolynomRegressor(BaseEstimator):
         #print("number of coefficients: ", n_coeffs)
         designmatrix = self.build_designmatrix(x, interactions = interactions)
         n_coeffs = designmatrix.shape[1]
-        print("design shape: ", designmatrix.shape)
         column_norms_designmatrix = self.column_norms(designmatrix)
         designmatrix = designmatrix/column_norms_designmatrix
 
@@ -316,6 +310,7 @@ class PolynomRegressor(BaseEstimator):
 
         return self
 
+'''
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -367,3 +362,4 @@ surf = ax.plot_surface(XX, YY, ZZ, \
 ax.scatter(x_points, x_points, z_noisy, c = 'b', marker='o', zorder = 0)
 
 plt.show()
+'''

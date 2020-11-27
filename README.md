@@ -7,7 +7,7 @@ Under the hood polynomial coefficients are optimized via [cvxpy's](https://githu
 ## Why?
 Often human intuition or prior knowledge gives us an idea that relationships between variables should be monotonic or follow certain asymptotic behaviour. In this example the monotonic fit is visually much more convincing than an unconstrained fit. 
 
-![Example fits](Example_Montonic.png)
+![Example fits](https://github.com/dschmitz89/Polyfit/blob/Multidimensional/Example_Monotonic.png)
 
 ## Installation: 
 

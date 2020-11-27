@@ -21,7 +21,7 @@ pred_numpy = vander@np_coeffs[::-1]
 
 polyestimator = PolynomRegressor(deg=DEG)
 monotone_constraint = Constraints(monotonicity='inc')
-polyestimator.fit(X, y, loss = 'l1', constraints={0: monotone_constraint})
+polyestimator.fit(X, y, loss = 'l2', constraints={0: monotone_constraint})
 pred_mon = polyestimator.predict(x_plot.reshape(-1, 1))
 
 f, ax = plt.subplots(1, figsize = (9, 5))

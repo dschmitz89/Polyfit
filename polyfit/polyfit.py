@@ -22,6 +22,10 @@ def load_example():
     return X, y
 
 class Constraints:
+    '''Constraints class stores all constraints for the specific variable
+
+    args: 
+    '''
 
     def __init__(self, monotonicity = None, curvature = None, sign = None, \
         constraint_range = None, gridpoints = 20):
@@ -231,17 +235,18 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
                     
         try:    
             
-            if loss == 'l1':
+            if loss == 'l1' or self.regularization == 'l2':
             #l1 loss solved by ECOS. Lower its tolerances for convergence    
-                problem.solve(abstol=1e-9, reltol=1e-9, max_iters=1000000, \
-                              feastol=1e-9, abstol_inacc = 1e-7, \
+                problem.solve(abstol=1e-8, reltol=1e-8, max_iters=1000000, \
+                              feastol=1e-8, abstol_inacc = 1e-7, \
                                   reltol_inacc=1e-7, verbose = verbose)            
                 
             else:
                     
                 #l2 and huber losses solved by OSQP. Lower its tolerances for convergence
-                problem.solve(eps_abs=1e-10, eps_rel=1e-10, max_iter=10000000, \
-                              eps_prim_inf = 1e-10, eps_dual_inf = 1e-10, verbose = verbose) 
+                problem.solve(eps_abs=1e-8, eps_rel=1e-8, max_iter=10000000, \
+                              eps_prim_inf = 1e-9, eps_dual_inf = 1e-9, verbose = verbose, \
+                                  adaptive_rho = True) 
                     
         #in case OSQP or ECOS fail, use SCS
         except cv.SolverError:

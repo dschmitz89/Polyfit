@@ -1,5 +1,5 @@
 # Polyfit
-Scikit learn compatible constrained polynomial regression in Python. 
+![alt text](https://github.com/dschmitz89/Polyfit/blob/master/Icon_new_crop.jpg "")Scikit learn compatible constrained polynomial regression in Python
 
 Mostly developed for educational purposes, polyfit enables fitting scikit learn compatible polynomial regression models under shape constraints.
 Under the hood polynomial coefficients are optimized via [cvxpy's](https://github.com/cvxgrp/cvxpy) excellent convex optimizers. 

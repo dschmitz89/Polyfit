@@ -56,8 +56,6 @@ PolynomRegressor.fit(X, y) options:
 ## Method
 The constraints are enforced by imposing inequality constraints upon the polynomial coefficients. For example, if the resulting one dimensional polynomial is required to be monotonically increasing, its first derivative must be greater than 0. Enforcing this for an interval is not possible but enforcing it for a reasonable number of points within an interval (default: 20) is usually enough to guarantee the monotonicity for this interval. Given the predictor vector x, target vector y and the Vandermonde matrix V the polynomial coefficients p are then estimated by the following optimization problem:
 
-![equation](https://latex.codecogs.com/svg.latex?\underset{p}{\mathrm{argmin}}||V(x)p-y||^2=0)
-
-![equation](https://latex.codecogs.com/svg.latex?\text{s.&space;t.&space;}\left|\frac{\partial&space;V(x)}{\partial&space;x}p\right|_{x_i}\geq&space;0\&space;\ \forall\&space;x_i)
+![equation](https://latex.codecogs.com/gif.latex?\underset{p}{\mathrm{argmin}}||V(x)p-y||^2=0&space;\\&space;\text{s.&space;t.&space;}\left|\frac{\partial&space;V(x)}{\partial&space;x}p\right|_{x_i}\geq&space;0\&space;\forall&space;x_i)
 
 **Warning: by default, the polynomial is only monotonic or convex/concave for the interval of the input data!**

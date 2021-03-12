@@ -8,7 +8,7 @@ Mostly developed for educational purposes, polyfit enables fitting scikit learn 
 ## Why?
 Often human intuition or prior knowledge gives us an idea that relationships between variables should be monotonic or follow certain asymptotic behaviour. In this example the monotonic fit is visually much more convincing than an unconstrained fit. 
 
-![Example fits](https://github.com/dschmitz89/Polyfit/blob/Multidimensional/Example_Monotonic.png)
+![Example fits](https://github.com/dschmitz89/Polyfit/blob/master/Example_Monotonic.png)
 
 ## Installation: 
 

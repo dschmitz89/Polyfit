@@ -30,4 +30,4 @@ polyestimator.fit(X, y, loss = 'l2', constraints={0: monotone_constraint})
 ## Method
 The constraints are enforced by imposing inequality constraints upon the polynomial coefficients. For example, if the resulting one dimensional polynomial is required to be monotonically increasing, its first derivative must be greater than 0. Enforcing this for an interval is not possible but enforcing it for a reasonable number of points within an interval (default: 20) is usually enough to guarantee the monotonicity for this interval. Given the predictor vector x, target vector y and the Vandermonde matrix V the polynomial coefficients p are then estimated by the following optimization problem:
 
-![equation](https://latex.codecogs.com/gif.latex?||Vx-y||^2=0&space;\\&space;\text{s.&space;t.&space;}\left|\frac{\partial&space;V}{\partial&space;x}\right|_{x_i}\geq&space;0\&space;\forall&space;x_i)
+![equation](https://latex.codecogs.com/gif.latex?||V(x)p-y||^2=0&space;\\&space;\text{s.&space;t.&space;}\left|\frac{\partial&space;V(x)}{\partial&space;x}p\right|_{x_i}\geq&space;0\&space;\forall&space;x_i)

@@ -13,9 +13,7 @@ Often human intuition or prior knowledge gives us an idea that relationships bet
 ## Installation: 
 
 ```bash
-git clone https://github.com/dschmitz89/Polyfit/
-cd Polyfit
-pip install .
+pip install polyfit
 ```
 
 ## Usage

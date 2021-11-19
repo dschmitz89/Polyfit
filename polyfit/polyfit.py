@@ -32,13 +32,13 @@ class Constraints:
     Constraints class
 
     Args:
-        monotonicity (optional, string ): Monotonicty of the model
+        monotonicity (optional, string ): Monotonicty of the model \
             Should be  'inc' or 'dec'
-        curvature (optional, string ): Curvature of the model
+        curvature (optional, string ): Curvature of the model \
             Should be  'convex' or 'concave'
-        sign (optional, string ): Sign of the polynomial coefficients
+        sign (optional, string ): Sign of the polynomial coefficients \
             Should be  'positive' or 'negative'
-        constraint_range (optional, list ): Range over which the constraints should be enforced
+        constraint_range (optional, list ): Range over which the constraints should be enforced \
             Must be of the form ``[lb, ub]`` with lower bounds ``lb`` and upper bounds ``ub``
         gridpoints (optional, int, default 20 ): Number of grid points on which the constraints are
             imposed for the optimization problem
@@ -128,7 +128,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
             If ``True``, interaction terms are used.
 
         Returns
-        -------------
+        ----------
         y : ndarray (n, )
             Model prediction
         '''

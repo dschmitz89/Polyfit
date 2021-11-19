@@ -14,7 +14,15 @@ from os.path import dirname
 PATH = dirname(__file__)
 
 def load_example():
-    
+    r'''
+    Loads example data
+
+    Returns
+    -------
+    X : ndarray (m, n)
+    y : ndarray (n, )
+    '''
+
     npzfile = np.load(PATH + '/Example_Data.npz')
     X = npzfile['X']
     y = npzfile['y']
@@ -22,11 +30,25 @@ def load_example():
     return X, y
 
 class Constraints:
-    '''Constraints class stores all constraints for the specific variable
+    r'''
+    Constraints class
 
-    args: 
+    Args:
+        monotonicity (optional, string ): Monotonicty of the model
+            Should be  'inc' or 'dec'
+        curvature (optional, string ): Curvature of the model
+            Should be  'convex' or 'concave'
+        sign (optional, string ): Sign of the polynomial coefficients
+            Should be  'positive' or 'negative'
+        constraint_range (optional, list ): Range over which the constraints should be enforced
+            Must be of the form ``[lb, ub]`` with lower bounds ``lb`` and upper bounds ``ub``
+        gridpoints (optional, int, default 20 ): Number of grid points on which the constraints are
+            imposed for the optimization problem
+
+    .. note::
+        The shape constraints make the model fit numerically instable.   
     '''
-
+    
     def __init__(self, monotonicity = None, curvature = None, sign = None, \
         constraint_range = None, gridpoints = 20):
 
@@ -37,7 +59,17 @@ class Constraints:
         self.gridpoints = gridpoints
 
 class PolynomRegressor(BaseEstimator, RegressorMixin):
-    
+    r'''
+    Polynomregressor class
+
+    Fits a multivariate polynomial model to arbitrary numerical data.
+
+    Args:
+        deg (int): Degree of the polynomial
+        regularization (optional, string ): Regularization to be used
+            Should be 'l1' or 'l2
+        lam (optional, float, default 0 ): Regularization coefficient  
+    '''    
     def __init__(self, deg=None, regularization = None, lam = 0):
         
         self.deg = deg
@@ -45,7 +77,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         self.regularization = regularization
         self.lam = lam
     
-    def column_norms(self, V):
+    def _column_norms(self, V):
         
         norms = np.sqrt(np.square(V).sum(0))
         
@@ -53,14 +85,14 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         
         return norms
     
-    def vander(self, x):
+    def _vander(self, x):
         
         x = x.astype(np.float64)
         return np.fliplr(np.vander(x, N = self.deg +1))
 
-    def vander_grad(self, x):
+    def _vander_grad(self, x):
         
-        vander = self.vander(x)
+        vander = self._vander(x)
         
         red_vander = vander[:, :-1]
         
@@ -72,9 +104,9 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         
         return grad_matrix
 
-    def vander_hesse(self, x):
+    def _vander_hesse(self, x):
         
-        grad = self.vander_grad(x)
+        grad = self._vander_grad(x)
         
         red_grad = grad[:, :-1]
         
@@ -87,28 +119,38 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         return hesse_matrix
         
     def predict(self, x, interactions = False):
-        
+        '''
+        Predict the polynomial model for data x
+
+        Parameters
+        --------
+        x : ndarray (m, n) 
+            Test data for which predictions should be made
+        interactions (optional, bool, default False) : bool
+            If ``True``, interaction terms are used.
+        '''
+
         if self.coeffs_ is not None:
             
-            designmatrix = self.build_designmatrix(x, interactions = interactions)
+            designmatrix = self._build_designmatrix(x, interactions = interactions)
             #print("designmatrix: ", designmatrix.shape)
             return np.dot(designmatrix, self.coeffs_)
         
         else:
             
-            return np.nan
+            raise ValueError("Estimator needs to be trained first!")
     
-    def build_designmatrix(self, x, interactions = False):
+    def _build_designmatrix(self, x, interactions = False):
 
         n_samples, n_features = x.shape
 
-        designmatrix = self.vander(x[:, 0])
+        designmatrix = self._vander(x[:, 0])
 
         #loop over features and append Vandermonde matrix for each features without constant column
 
         for i in range(1, n_features):
 
-            van = self.vander(x[:, i])
+            van = self._vander(x[:, i])
             #print("van shape: ", van.shape)
 
             designmatrix = np.hstack((designmatrix, van[:, 1:]))
@@ -124,12 +166,36 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, x, y, loss = 'l2',  interactions = False, m = 1, constraints = None, \
             verbose = False):
-        
+        '''
+        Fits the polynomial model to data x/y via cvxpy
+
+        Parameters
+        --------
+        x : ndarray (m, n) 
+            Predictor variables of ``m`` samples and ``n`` features
+        y : ndarray (n, )
+            Target variable
+        loss : string, optional, default 'l2'
+            Loss function to use. Can be one of
+
+                - 'l2'
+                - 'l1'
+                - 'huber'
+
+        interactions : bool, optional, default False
+            If ``True``, includes interaction terms in the prediction
+        m : float, optional, default 1
+            Threshold between linear and quadratic loss for huber loss
+        constraints : dict, optional, default None
+            Dictionary of instances of :py:class:`~Constraints`. Must be of the form ``{i: constraints_i, j: constraints_j, ...}`` where ``i`` and ``j`` are indices of the features.       
+        verbose : bool, optional, default False
+            If ``True``, print optimizer progress
+        '''
         n_samples, n_features = x.shape
         n_coeffs = n_features * self.deg +1
-        designmatrix = self.build_designmatrix(x, interactions = interactions)
+        designmatrix = self._build_designmatrix(x, interactions = interactions)
         n_coeffs = designmatrix.shape[1]
-        column_norms_designmatrix = self.column_norms(designmatrix)
+        column_norms_designmatrix = self._column_norms(designmatrix)
         designmatrix = designmatrix/column_norms_designmatrix
 
         coeffs = cv.Variable(n_coeffs)
@@ -203,7 +269,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
 
                 if monotonic:
 
-                    vander_grad = self.vander_grad(constraints_grid)[:, 1:]
+                    vander_grad = self._vander_grad(constraints_grid)[:, 1:]
                     norms = column_norms_designmatrix[coefficient_index:coefficient_index + self.deg]
                     vander_grad = vander_grad/norms
 
@@ -217,7 +283,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
 
                 if strict_curvature:
 
-                    vander_hesse = self.vander_hesse(constraints_grid)[:, 1:]
+                    vander_hesse = self._vander_hesse(constraints_grid)[:, 1:]
                     norms = column_norms_designmatrix[coefficient_index:coefficient_index + self.deg]
                     vander_hesse = vander_hesse/norms
 

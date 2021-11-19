@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct  9 12:25:16 2020
-
-@author: tyrion
-"""
 import numpy as np
 import cvxpy as cv
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -17,10 +10,15 @@ def load_example():
     r'''
     Loads example data
 
+    Arguments
+    ----------
+
     Returns
-    -------
+    -------------
     X : ndarray (m, n)
+        Predictor data
     y : ndarray (n, )
+        Target data
     '''
 
     npzfile = np.load(PATH + '/Example_Data.npz')
@@ -46,7 +44,7 @@ class Constraints:
             imposed for the optimization problem
 
     .. note::
-        The shape constraints make the model fit numerically instable.   
+        The shape constraints make the model fit numerically unstable. Use at your own risk!
     '''
     
     def __init__(self, monotonicity = None, curvature = None, sign = None, \
@@ -119,15 +117,20 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         return hesse_matrix
         
     def predict(self, x, interactions = False):
-        '''
+        r'''
         Predict the polynomial model for data x
 
         Parameters
-        --------
+        -------------
         x : ndarray (m, n) 
             Test data for which predictions should be made
         interactions (optional, bool, default False) : bool
             If ``True``, interaction terms are used.
+
+        Returns
+        -------------
+        y : ndarray (n, )
+            Model prediction
         '''
 
         if self.coeffs_ is not None:

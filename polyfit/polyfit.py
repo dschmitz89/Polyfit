@@ -31,20 +31,22 @@ class Constraints:
     '''
     Constraints class
 
-    Args:
-        monotonicity (optional, string ): Monotonicty of the model
-            Should be  'inc' or 'dec'
-        curvature (optional, string ): Curvature of the model 
-            Should be  'convex' or 'concave'
-        sign (optional, string ): Sign of the polynomial coefficients 
-            Should be  'positive' or 'negative'
-        constraint_range (optional, list ): Range over which the constraints should be enforced \
-            Must be of the form ``[lb, ub]`` with lower bounds ``lb`` and upper bounds ``ub``
-        gridpoints (optional, int, default 20 ): Number of grid points on which the constraints are
-            imposed for the optimization problem
-
     .. note::
-        The shape constraints make the model fit numerically unstable. Use at your own risk!
+        Shape constraints potentially make the model fit numerically unstable. Use at your own risk!
+    
+    Parameters
+    -------------
+    monotonicity : string, optional
+        Monotonicty of the model. Should be  'inc' or 'dec'
+    curvature : string, optional
+        Curvature of the model . Should be  'convex' or 'concave'.
+    sign : string, optional
+        Sign of the polynomial coefficients . Should be  'positive' or 'negative'.
+    constraint_range : list, optional
+        Range over which the constraints should be enforced. Must be of the form ``[lb, ub]`` with lower bounds ``lb`` and upper bounds ``ub``
+    gridpoints : int, optional, default 20
+        Number of grid points on which the constraints are imposed for the optimization problem
+
     '''
     
     def __init__(self, monotonicity = None, curvature = None, sign = None, \
@@ -57,23 +59,39 @@ class Constraints:
         self.gridpoints = gridpoints
 
 class PolynomRegressor(BaseEstimator, RegressorMixin):
-    r'''
+    '''
     Polynomregressor class
 
     Fits a multivariate polynomial model to arbitrary numerical data.
 
-    Args:
-        deg (int): Degree of the polynomial
-        regularization (optional, string ): Regularization to be used
-            Should be 'l1' or 'l2
-        lam (optional, float, default 0 ): Regularization coefficient  
-    '''    
-    def __init__(self, deg=None, regularization = None, lam = 0):
+    Parameters
+    -------------
+    deg : int 
+        Degree of the polynomial
+    regularization : string, optional
+        Regularization to be used. Should be 'l1' or 'l2'.
+    lam : float, optional, default 0
+        Regularization coefficient
+    interactions : bool, optional, default False
+        If ``True``, also uses interaction terms of all predictor variables
+
+    Attributes
+    -------------
+    coeffs_ : ndarray (n, )
+        Estimated polynomial coefficients
+    '''
+
+    def __init__(self, 
+                deg=None,
+                regularization = None,
+                lam = 0,
+                interactions = False):
         
         self.deg = deg
         self.coeffs_ = None
         self.regularization = regularization
         self.lam = lam
+        self.interactions = interactions
     
     def _column_norms(self, V):
         
@@ -116,7 +134,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         
         return hesse_matrix
         
-    def predict(self, x, interactions = False):
+    def predict(self, x):
         r'''
         Predict the polynomial model for data x
 
@@ -124,8 +142,6 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         -------------
         x : ndarray (m, n) 
             Test data for which predictions should be made
-        interactions (optional, bool, default False) : bool
-            If ``True``, interaction terms are used.
 
         Returns
         ----------
@@ -135,15 +151,14 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
 
         if self.coeffs_ is not None:
             
-            designmatrix = self._build_designmatrix(x, interactions = interactions)
-            #print("designmatrix: ", designmatrix.shape)
+            designmatrix = self._build_designmatrix(x)
             return np.dot(designmatrix, self.coeffs_)
         
         else:
             
             raise ValueError("Estimator needs to be trained first!")
     
-    def _build_designmatrix(self, x, interactions = False):
+    def _build_designmatrix(self, x):
 
         n_samples, n_features = x.shape
 
@@ -154,11 +169,10 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         for i in range(1, n_features):
 
             van = self._vander(x[:, i])
-            #print("van shape: ", van.shape)
 
             designmatrix = np.hstack((designmatrix, van[:, 1:]))
 
-        if interactions == True:
+        if self.interactions == True:
 
             poly = PolynomialFeatures(self.deg, interaction_only=True)
             interactions_matrix = poly.fit_transform(x)
@@ -167,10 +181,10 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
 
         return designmatrix
 
-    def fit(self, x, y, loss = 'l2',  interactions = False, m = 1, constraints = None, \
+    def fit(self, x, y, loss = 'l2', m = 1, constraints = None, \
             verbose = False):
         '''
-        Fits the polynomial model to data x/y via cvxpy
+        Fits the polynomial model to data ``x`` and ``y`` via cvxpy
 
         Parameters
         --------
@@ -185,8 +199,6 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
                 - 'l1'
                 - 'huber'
 
-        interactions : bool, optional, default False
-            If ``True``, includes interaction terms in the prediction
         m : float, optional, default 1
             Threshold between linear and quadratic loss for huber loss
         constraints : dict, optional, default None
@@ -196,7 +208,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
         '''
         n_samples, n_features = x.shape
         n_coeffs = n_features * self.deg +1
-        designmatrix = self._build_designmatrix(x, interactions = interactions)
+        designmatrix = self._build_designmatrix(x)
         n_coeffs = designmatrix.shape[1]
         column_norms_designmatrix = self._column_norms(designmatrix)
         designmatrix = designmatrix/column_norms_designmatrix

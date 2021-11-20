@@ -2,3 +2,5 @@ numpy
 cvxpy
 matplotlib
 scikit-learn
+nbsphinx
+ipython

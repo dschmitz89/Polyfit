@@ -11,7 +11,7 @@ if __name__ == '__main__':
     
     setup(
         name='polyfit',   
-        version='0.2', 
+        version='1.0', 
         description='Constrained polynomial regression',
         author='Daniel Schmitz',
         license='MIT',

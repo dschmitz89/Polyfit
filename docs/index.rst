@@ -7,8 +7,8 @@ Welcome to polyfit's documentation!
 ===================================
 polyfit enables convenient multivariate sklearn-compatible polynomial regression. Compared to sklearn, the 
 underlying convex optimization algorithms are sometimes more stable than the ones used by sklearn. 
-Furthermore, polyfit enables shape constrained models to make the fit monotonic or convex for exmample.
-However, these shape constraints are enforced by inequality constraints in the optimization problem which is numerically unstable.
+Furthermore, polyfit enables shape constrained models to make the fit monotonic or convex for example.
+Note that these shape constraints are enforced by inequality constraints in the optimization problem which might be numerically unstable.
 
 Installation
 ===========================================

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import numpy as np
 from polyfit import load_example, PolynomRegressor, Constraints
 import matplotlib.pyplot as plt
@@ -15,8 +13,8 @@ VERBOSE = True
 
 np_coeffs = np.polyfit(X.ravel(), y, DEG)
 polyestimator = PolynomRegressor(deg=DEG)
-vander = np.fliplr(np.vander(x_plot, N = DEG +1))
-pred_numpy = vander@np_coeffs[::-1]
+vander = np.vander(x_plot, N = DEG +1)
+pred_numpy = vander@np_coeffs
 
 
 polyestimator = PolynomRegressor(deg=DEG)

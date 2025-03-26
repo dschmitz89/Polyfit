@@ -271,7 +271,7 @@ class PolynomRegressor(BaseEstimator, RegressorMixin):
                 strict_curvature = Feature_constraints.curvature is not None
                 
 
-                if monotonic or strict_curvature or ybound:
+                if monotonic or strict_curvature:
 
                     if Feature_constraints.constraint_range is None:
 
